@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Autoresearch — playbook-builder</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter','SF Pro',system-ui,sans-serif;background:#fafafa;color:#1a1a2e;padding:24px;max-width:1200px;margin:0 auto;}
+h1{font-size:28px;font-weight:700;margin-bottom:4px;}
+.sub{color:#666;font-size:14px;margin-bottom:24px;}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;text-align:center;}
+.card .num{font-size:36px;font-weight:700;line-height:1;}
+.card .label{font-size:12px;color:#888;margin-top:4px;}
+.card.green .num{color:#0d9488;}
+.card.blue .num{color:#2563eb;}
+.card.amber .num{color:#d97706;}
+.card.rose .num{color:#e11d48;}
+.chart-wrap{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:24px;margin-bottom:24px;}
+.chart-wrap h2{font-size:18px;margin-bottom:16px;}
+canvas{max-height:300px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:10px 12px;background:#f5f5f5;border-bottom:2px solid #e0e0e0;font-weight:600;}
+td{padding:10px 12px;border-bottom:1px solid #eee;}
+tr:hover{background:#fafafa;}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+.badge.baseline{background:#dbeafe;color:#1d4ed8;}
+.badge.keep{background:#d1fae5;color:#065f46;}
+.badge.discard{background:#fee2e2;color:#991b1b;}
+.status-banner{padding:14px 20px;border-radius:12px;margin-bottom:24px;font-weight:600;font-size:15px;}
+.status-banner.running{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;}
+.status-banner.complete{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;}
+.status-banner.setting-up{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+.eval-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;}
+.eval-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;}
+.eval-card h3{font-size:14px;font-weight:600;margin-bottom:8px;}
+.eval-bar{height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;}
+.eval-fill{height:100%;border-radius:4px;transition:width .5s;}
+.eval-fill.high{background:#0d9488;}
+.eval-fill.mid{background:#d97706;}
+.eval-fill.low{background:#e11d48;}
+.eval-pct{font-size:24px;font-weight:700;margin-top:4px;}
+.table-wrap{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:24px;}
+.table-wrap h2{font-size:18px;margin-bottom:16px;}
+.refresh-note{text-align:center;color:#aaa;font-size:12px;margin-top:16px;}
+</style>
+</head>
+<body>
+<h1>Autoresearch: playbook-builder</h1>
+<p class="sub">Autonomous skill optimization — live dashboard (refreshes every 10s)</p>
+
+<div class="status-banner setting-up" id="statusBanner">Setting up...</div>
+
+<div class="cards">
+  <div class="card blue"><div class="num" id="currentExp">0</div><div class="label">Experiments Run</div></div>
+  <div class="card green"><div class="num" id="bestScore">—</div><div class="label">Best Pass Rate</div></div>
+  <div class="card amber"><div class="num" id="baselineScore">—</div><div class="label">Baseline Rate</div></div>
+  <div class="card rose"><div class="num" id="keepRate">—</div><div class="label">Keep Rate</div></div>
+</div>
+
+<div class="chart-wrap">
+  <h2>Score Progression</h2>
+  <canvas id="scoreChart"></canvas>
+</div>
+
+<h2 style="font-size:18px;margin-bottom:12px;">Per-Eval Breakdown</h2>
+<div class="eval-grid" id="evalGrid"></div>
+
+<div class="table-wrap">
+  <h2>Experiment Log</h2>
+  <table>
+    <thead><tr><th>#</th><th>Score</th><th>Pass Rate</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody id="expTable"></tbody>
+  </table>
+</div>
+
+<p class="refresh-note">Auto-refreshes every 10 seconds &middot; Data from results.json</p>
+
+<script>
+let chart = null;
+async function refresh() {
+  try {
+    const r = await fetch('results.json?t=' + Date.now());
+    const d = await r.json();
+    // Status
+    const sb = document.getElementById('statusBanner');
+    sb.className = 'status-banner ' + d.status;
+    if (d.status === 'running') sb.textContent = 'Running experiment ' + d.current_experiment + '...';
+    else if (d.status === 'complete') sb.textContent = 'Complete — ' + d.experiments.length + ' experiments, best: ' + d.best_score.toFixed(1) + '%';
+    else sb.textContent = 'Setting up baseline...';
+    // Cards
+    document.getElementById('currentExp').textContent = d.experiments.length;
+    document.getElementById('bestScore').textContent = d.best_score > 0 ? d.best_score.toFixed(1) + '%' : '—';
+    document.getElementById('baselineScore').textContent = d.baseline_score > 0 ? d.baseline_score.toFixed(1) + '%' : '—';
+    const kept = d.experiments.filter(e => e.status === 'keep').length;
+    const total = d.experiments.filter(e => e.status !== 'baseline').length;
+    document.getElementById('keepRate').textContent = total > 0 ? Math.round(kept/total*100) + '%' : '—';
+    // Chart
+    if (d.experiments.length > 0) {
+      const labels = d.experiments.map(e => 'E' + e.id);
+      const data = d.experiments.map(e => e.pass_rate);
+      const colors = d.experiments.map(e => e.status === 'baseline' ? '#2563eb' : e.status === 'keep' ? '#0d9488' : '#e11d48');
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('scoreChart'), {
+        type: 'bar',
+        data: {
+          labels, datasets: [{
+            label: 'Pass Rate %', data, backgroundColor: colors,
+            borderRadius: 6, barPercentage: 0.7
+          }]
+        },
+        options: {
+          responsive: true, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+        }
+      });
+    }
+    // Eval breakdown
+    const eg = document.getElementById('evalGrid');
+    eg.innerHTML = '';
+    (d.eval_breakdown || []).forEach(ev => {
+      const pct = ev.total > 0 ? Math.round(ev.pass_count / ev.total * 100) : 0;
+      const cls = pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
+      eg.innerHTML += '<div class="eval-card"><h3>' + ev.name + '</h3><div class="eval-bar"><div class="eval-fill ' + cls + '" style="width:' + pct + '%"></div></div><div class="eval-pct">' + pct + '%</div><div style="font-size:12px;color:#888">' + ev.pass_count + '/' + ev.total + ' passes</div></div>';
+    });
+    // Table
+    const tb = document.getElementById('expTable');
+    tb.innerHTML = '';
+    d.experiments.forEach(e => {
+      tb.innerHTML += '<tr><td>' + e.id + '</td><td>' + e.score + '/' + e.max_score + '</td><td>' + e.pass_rate.toFixed(1) + '%</td><td><span class="badge ' + e.status + '">' + e.status + '</span></td><td>' + e.description + '</td></tr>';
+    });
+  } catch(e) { console.log('Refresh failed:', e); }
+}
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

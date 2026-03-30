@@ -1,0 +1,31 @@
+{
+  "skill_name": "playbook-builder",
+  "status": "complete",
+  "current_experiment": 1,
+  "baseline_score": 75.0,
+  "best_score": 100.0,
+  "experiments": [
+    {
+      "id": 0,
+      "score": 3,
+      "max_score": 4,
+      "pass_rate": 75.0,
+      "status": "baseline",
+      "description": "Existing orthodontics-india playbook \u2014 V1 structure (13 sections) instead of V2 (8), \u00a3 instead of \u20b9"
+    },
+    {
+      "id": 1,
+      "score": 4,
+      "max_score": 4,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "V2 routing guard + example fix + Knowledge Graph reinforcement + currency enforcement \u2014 VALIDATED: latex-mattress-india playbook scores 4/4"
+    }
+  ],
+  "eval_breakdown": [
+    {"name": "Content Specificity", "pass_count": 2, "total": 2},
+    {"name": "V2 Emotional Structure", "pass_count": 1, "total": 2},
+    {"name": "Interactive Elements", "pass_count": 2, "total": 2},
+    {"name": "Visual Design Quality", "pass_count": 2, "total": 2}
+  ]
+}

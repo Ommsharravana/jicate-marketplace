@@ -8,7 +8,11 @@ JICATE Solutions builds AI services that deliver results — not tools. Every sk
 
 | Skill | What It Does | Input | Output | Cost |
 |-------|-------------|-------|--------|------|
-| [AI Impact Assessment](skills/ai-impact-assessment/) | Personalized AI opportunity analysis for any business | Company name + city | "The One Thing" report with ROI estimates | **Free** |
+| [AI Impact Assessment](skills/ai-impact-assessment/) | Find THE ONE AI opportunity that changes everything for any business | Company name + city | Personalized "One Thing" report with ROI | **Free** |
+| [SEO + GEO + AEO Audit](skills/seo-audit/) | Website health across Google, AI models, and answer engines | Website URL + competitor URLs | PDF report with Digital Health Score + action plan | PaP / MO |
+| [Tally Bridge](skills/tally-bridge/) | Sync TallyPrime accounting data to a cloud dashboard | TallyPrime on client machine | Live cloud dashboard + auto-sync agent | PaP / MO |
+| [SDG Intelligence](skills/sdg-intelligence/) | Map institutional data to 17 UN SDGs for accreditation | CSV/Excel of courses, research, outreach | NAAC/NIRF/THE/QS-ready reports | PaP / MO |
+| [Playbook Builder](skills/playbook-builder/) | Interactive sales playbooks that turn strangers into clients | Industry name or company URL | Deployed HTML playbook on Vercel | Internal |
 
 ## How It Works
 

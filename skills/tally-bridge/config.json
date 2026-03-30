@@ -1,0 +1,8 @@
+{
+  "_comment": "Tally Bridge skill configuration. Edit values or delete keys to be re-prompted.",
+  "defaultCboName": "",
+  "defaultAnyDeskId": "",
+  "preferredSyncMode": "incremental",
+  "autoBackupBeforeResync": true,
+  "notifyOnSyncComplete": true
+}
